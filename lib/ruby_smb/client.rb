@@ -5,6 +5,7 @@ module RubySMB
     require 'ruby_smb/client/negotiation'
     require 'ruby_smb/client/authentication'
     require 'ruby_smb/client/signing'
+    require 'ruby_smb/client/encryption'
     require 'ruby_smb/client/tree_connect'
     require 'ruby_smb/client/echo'
     require 'ruby_smb/client/utils'
@@ -13,6 +14,7 @@ module RubySMB
     include RubySMB::Client::Negotiation
     include RubySMB::Client::Authentication
     include RubySMB::Client::Signing
+    include RubySMB::Client::Encryption
     include RubySMB::Client::TreeConnect
     include RubySMB::Client::Echo
     include RubySMB::Client::Utils
