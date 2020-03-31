@@ -1,11 +1,9 @@
-require 'openssl'
-
 module RubySMB
   module SMB2
     module Packet
       # An SMB2 TRANSFORM_HEADER Packet as defined in
       # [2.2.41 SMB2 TRANSFORM_HEADER](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/d6ce2327-a4c9-4793-be66-7b5bad2175fa)
-      class TransformHeader < BinData::Record
+      class TransformHeader < RubySMB::GenericPacket
         endian :little
         hide   :reserved0
 
