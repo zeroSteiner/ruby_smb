@@ -28,6 +28,7 @@ module RubySMB
           end
           @preauth_integrity_hash_value = OpenSSL::Digest.digest(@preauth_integrity_hash_algorithm, @preauth_integrity_hash_value + request_packet.to_binary_s)
           @preauth_integrity_hash_value = OpenSSL::Digest.digest(@preauth_integrity_hash_algorithm, @preauth_integrity_hash_value + response_packet.to_binary_s)
+          puts "Preauth Hash Value (negotiation.rb:31    ): #{@preauth_integrity_hash_value.each_byte.map { |b| b.to_s(16).rjust(2, '0') }.join}"
         end
         # If the response contains the SMB2 wildcard revision number dialect;
         # it indicates that the server implements SMB 2.1 or future dialect

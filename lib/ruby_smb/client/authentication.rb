@@ -206,6 +206,7 @@ module RubySMB
             raise RubySMB::Error::EncryptionError.new('Cannot compute the Preauth Integrity Hash value: Preauth Integrity Hash Algorithm is nil')
           end
           @preauth_integrity_hash_value = OpenSSL::Digest.digest(@preauth_integrity_hash_algorithm, @preauth_integrity_hash_value + challenge_packet.to_binary_s)
+          puts "Preauth Hash Value (authentication.rb:209): #{@preauth_integrity_hash_value.each_byte.map { |b| b.to_s(16).rjust(2, '0') }.join}"
         end
         @session_id = challenge_packet.smb2_header.session_id
         type2_b64_message = smb2_type2_message(challenge_packet)
@@ -267,6 +268,7 @@ module RubySMB
             raise RubySMB::Error::EncryptionError.new('Cannot compute the Preauth Integrity Hash value: Preauth Integrity Hash Algorithm is nil')
           end
           @preauth_integrity_hash_value = OpenSSL::Digest.digest(@preauth_integrity_hash_algorithm, @preauth_integrity_hash_value + packet.to_binary_s)
+          puts "Preauth Hash Value (authentication.rb:271): #{@preauth_integrity_hash_value.each_byte.map { |b| b.to_s(16).rjust(2, '0') }.join}"
         end
         send_recv(packet)
       end
@@ -279,7 +281,12 @@ module RubySMB
       def smb2_ntlmssp_negotiate_packet
         type1_message = ntlm_client.init_context
         packet = RubySMB::SMB2::Packet::SessionSetupRequest.new
-        packet.set_type1_blob(type1_message.serialize)
+        packet.smb2_header.credit_charge = 1
+        packet.smb2_header.process_id = 0
+        #packet.set_type1_blob(type1_message.serialize)  # todo: fix me to use the real blob
+        blob = "\x60\x40\x06\x06\x2b\x06\x01\x05\x05\x02\xa0\x36\x30\x34\xa0\x0e\x30\x0c\x06\x0a\x2b\x06\x01\x04\x01\x82\x37\x02\x02\x0a\xa2\x22\x04\x20\x4e\x54\x4c\x4d\x53\x53\x50\x00\x01\x00\x00\x00\x35\x82\x88\xe0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        packet.security_buffer_length = blob.length
+        packet.buffer = blob
         # This Message ID should always be 1, but thanks to Multi-Protocol Negotiation
         # the Message ID can be out of sync at this point so we re-synch it here.
         packet.smb2_header.message_id = 1
@@ -312,6 +319,7 @@ module RubySMB
             raise RubySMB::Error::EncryptionError.new('Cannot compute the Preauth Integrity Hash value: Preauth Integrity Hash Algorithm is nil')
           end
           @preauth_integrity_hash_value = OpenSSL::Digest.digest(@preauth_integrity_hash_algorithm, @preauth_integrity_hash_value + packet.to_binary_s)
+          puts "Preauth Hash Value (authentication.rb:321): #{@preauth_integrity_hash_value.each_byte.map { |b| b.to_s(16).rjust(2, '0') }.join}"
         end
         send_recv(packet)
       end
