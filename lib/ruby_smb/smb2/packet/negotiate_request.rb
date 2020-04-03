@@ -23,7 +23,7 @@ module RubySMB
         end
         file_time           :client_start_time,      label: 'Client Start Time',  initial_value: 0, onlyif: -> { !need_negotiate_context? }
         array               :dialects,               label: 'Dialects', type: :uint16, initial_length: -> { dialect_count }
-        string              :pad,                    label: 'Padding', length: -> { pad_length(self.dialects) }, onlyif: -> { need_negotiate_context? }
+        string              :pad,                    label: 'Padding', length: -> { pad_length(self.dialects) }, onlyif: -> { need_negotiate_context? }, pad_byte: "\xff"
         array               :negotiate_context_list, label: 'Negotiate Context List', type: :negotiate_context, onlyif: -> { need_negotiate_context? }, read_until: :eof
 
         # Adds a dialect to the Dialects array and increments the dialect count
@@ -55,7 +55,7 @@ module RubySMB
           previous_element = negotiate_context_list.last || negotiate_context_list
           pad_length = pad_length(previous_element)
           self.negotiate_context_list << nc
-          self.negotiate_context_list.last.pad = "\x00" * pad_length
+          self.negotiate_context_list.last.pad = "\xff" * pad_length
         end
 
 

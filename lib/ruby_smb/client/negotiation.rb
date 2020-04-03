@@ -178,15 +178,17 @@ module RubySMB
 
       def smb3_negotiate_request
         packet = RubySMB::SMB2::Packet::NegotiateRequest.new
+        packet.smb2_header.credit_charge = 1
+        packet.smb2_header.process_id = 0
         packet.security_mode.signing_enabled = 1
         packet.add_dialect(SMB3_DIALECT_DEFAULT)
-        packet.client_guid = SecureRandom.random_bytes(16)
+        packet.client_guid = "\x6b\x61\x6b\x55\x41\x66\x42\x78\x58\x49\x6f\x4b\x4b\x6a\x55\x6f" # todo: randomize me - SecureRandom.random_bytes(16)
 
         nc = RubySMB::SMB2::NegotiateContext.new(
           context_type: RubySMB::SMB2::NegotiateContext::SMB2_PREAUTH_INTEGRITY_CAPABILITIES
         )
         nc.data.hash_algorithms << RubySMB::SMB2::PreauthIntegrityCapabilities::SHA_512
-        nc.data.salt = SecureRandom.random_bytes(32)
+        nc.data.salt = "\x4f\x70\x6f\x4c\x57\x43\x61\x53\x4b\x74\x79\x4c\x70\x6c\x71\x78\x69\x61\x62\x7a\x45\x43\x49\x48\x56\x53\x53\x4a\x58\x6f\x54\x77" # todo: randomize me - SecureRandom.random_bytes(32)
         packet.add_negotiate_context(nc)
 
         if @encryption_required
@@ -195,8 +197,8 @@ module RubySMB
           nc = RubySMB::SMB2::NegotiateContext.new(
             context_type: RubySMB::SMB2::NegotiateContext::SMB2_ENCRYPTION_CAPABILITIES
           )
-          #nc.data.ciphers << RubySMB::SMB2::EncryptionCapabilities::AES_128_CCM
-          nc.data.ciphers << RubySMB::SMB2::EncryptionCapabilities::AES_128_GCM
+          nc.data.ciphers << RubySMB::SMB2::EncryptionCapabilities::AES_128_CCM
+          #nc.data.ciphers << RubySMB::SMB2::EncryptionCapabilities::AES_128_GCM
           packet.add_negotiate_context(nc)
         end
 
