@@ -35,6 +35,7 @@ module RubySMB
           self.nonce.assign(cipher.random_iv)
 
           self.original_message_size.assign(unencrypted_data.length)
+          cipher.ccm_data_len = unencrypted_data.length if algorithm == 'AES-128-CCM'
 
           cipher.auth_data = self.to_binary_s[20...52]
           self.encrypted_data.assign(cipher.update(unencrypted_data) + cipher.final)
@@ -47,7 +48,7 @@ module RubySMB
         private
 
         def build_cipher(mode, algorithm, key)
-          unless ['AES-128-GCM'].include?(algorithm)
+          unless ['AES-128-CCM', 'AES-128-GCM'].include?(algorithm)
             # Only GCM is supported right now due to a bug in the Ruby OpenSSL implementation that
             # prevents setting the data length.
             # see: https://github.com/ruby/openssl/pull/359

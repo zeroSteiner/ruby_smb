@@ -25,6 +25,13 @@ status = client.authenticate
 
 puts "#{protocol} : #{status}"
 
+def bin_to_hex(s)
+  s.each_byte.map { |b| b.to_s(16).rjust(2, '0') }.join
+end
+puts "SMB 3.1.1 Key Generation:"
+puts "  - Session Key:    #{bin_to_hex(client.session_key)}"
+puts "  - KDF Context:    #{bin_to_hex(client.preauth_integrity_hash_value)}"
+
 begin
   tree = client.tree_connect(path)
   puts "Connected to #{path} successfully!"

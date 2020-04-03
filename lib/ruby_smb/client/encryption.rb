@@ -23,13 +23,13 @@ module RubySMB
 
         # in this dialect, flags = 1 means encrypted
         th = RubySMB::SMB2::Packet::TransformHeader.new(flags: 1, session_id: session_id)
-        th.encrypt(data, encryption_key, algorithm: 'AES-128-GCM')
+        th.encrypt(data, encryption_key, algorithm: 'AES-128-CCM')
         th
       end
 
       def smb3_1_decrypt(th, session_key, context)
         decryption_key = RubySMB::Crypto::KDF.counter_mode(session_key, "SMBS2CCipherKey\x00", context)
-        th.decrypt(decryption_key)
+        th.decrypt(decryption_key, algorithm: 'AES-128-CCM')
       end
     end
   end

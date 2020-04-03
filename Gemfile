@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'pry'
+gem 'openssl', path: '/home/smcintyre/Repositories/openssl'
 
 group :test do
   # simplecov test formatter and uploader for Coveralls.io
