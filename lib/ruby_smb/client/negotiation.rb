@@ -272,6 +272,7 @@ module RubySMB
           nc = RubySMB::SMB2::NegotiateContext.new(
             context_type: RubySMB::SMB2::NegotiateContext::SMB2_COMPRESSION_CAPABILITIES
           )
+          nc.data.flags = RubySMB::SMB2::CompressionCapabilities::SMB2_COMPRESSION_CAPABILITIES_FLAG_CHAINED
           # Adding all possible compression algorithm even if we don't support
           # them yet. This will force the server to disclose the supported
           # algorithms in the response.
