@@ -164,6 +164,78 @@ RSpec.describe RubySMB::SMB1::Pipe do
     end
   end
 
+  describe '#nmpipe_send_recv' do
+    let(:write_data)   { 'hello pipe' }
+    let(:request)      { double('TransactNmpipeRequest') }
+    let(:trans_data)   { double('Trans data') }
+    let(:raw_response) { double('Raw response') }
+    let(:response)     { double('Response') }
+    let(:result)       { 'response bytes' }
+
+    before :example do
+      allow(RubySMB::SMB1::Packet::Trans::TransactNmpipeRequest).to receive(:new).and_return(request)
+      allow(tree).to receive(:set_header_fields)
+      allow(request).to receive(:set_fid)
+      allow(request).to receive_message_chain(:data_block, :trans_data => trans_data)
+      allow(trans_data).to receive(:write_data=)
+      allow(client).to receive(:send_recv).and_return(raw_response)
+      allow(RubySMB::SMB1::Packet::Trans::TransactNmpipeResponse).to receive(:read).and_return(response)
+      allow(response).to receive(:valid?).and_return(true)
+      allow(response).to receive(:status_code).and_return(WindowsError::NTStatus::STATUS_SUCCESS)
+      allow(response).to receive_message_chain(:data_block, :trans_data, :read_data, :to_binary_s => result)
+    end
+
+    it 'creates a TransactNmpipeRequest' do
+      expect(RubySMB::SMB1::Packet::Trans::TransactNmpipeRequest).to receive(:new)
+      pipe.nmpipe_send_recv(write_data)
+    end
+
+    it 'calls Tree #set_header_fields' do
+      expect(tree).to receive(:set_header_fields).with(request)
+      pipe.nmpipe_send_recv(write_data)
+    end
+
+    it 'sets the request FID' do
+      expect(request).to receive(:set_fid).with(pipe.fid)
+      pipe.nmpipe_send_recv(write_data)
+    end
+
+    it 'sets the write_data on the request' do
+      expect(trans_data).to receive(:write_data=).with(write_data)
+      pipe.nmpipe_send_recv(write_data)
+    end
+
+    it 'calls Client #send_recv with the request' do
+      expect(client).to receive(:send_recv).with(request)
+      pipe.nmpipe_send_recv(write_data)
+    end
+
+    it 'parses the response as a TransactNmpipeResponse' do
+      expect(RubySMB::SMB1::Packet::Trans::TransactNmpipeResponse).to receive(:read).with(raw_response)
+      pipe.nmpipe_send_recv(write_data)
+    end
+
+    it 'raises InvalidPacket when the response is not valid' do
+      allow(response).to receive(:valid?).and_return(false)
+      allow(response).to receive(:packet_smb_version)
+      expect { pipe.nmpipe_send_recv(write_data) }.to raise_error(RubySMB::Error::InvalidPacket)
+    end
+
+    it 'raises UnexpectedStatusCode when status is not STATUS_SUCCESS or STATUS_BUFFER_OVERFLOW' do
+      allow(response).to receive(:status_code).and_return(WindowsError::NTStatus::STATUS_OBJECT_NAME_NOT_FOUND)
+      expect { pipe.nmpipe_send_recv(write_data) }.to raise_error(RubySMB::Error::UnexpectedStatusCode)
+    end
+
+    it 'allows STATUS_BUFFER_OVERFLOW without raising' do
+      allow(response).to receive(:status_code).and_return(WindowsError::NTStatus::STATUS_BUFFER_OVERFLOW)
+      expect { pipe.nmpipe_send_recv(write_data) }.not_to raise_error
+    end
+
+    it 'returns the response read data as a binary string' do
+      expect(pipe.nmpipe_send_recv(write_data)).to eq(result)
+    end
+  end
+
   describe '#dcerpc_request' do
     let(:options)                   { { host: '1.2.3.4' } }
     let(:stub_packet )              { RubySMB::Dcerpc::Winreg::OpenKeyRequest.new }

@@ -100,6 +100,36 @@ module RubySMB
         state == STATUS_OK
       end
 
+      # Perform a transact operation on the named pipe, sending write_data and
+      # returning the response data. STATUS_BUFFER_OVERFLOW is treated as a
+      # partial success (consistent with Rex behaviour and the MS-SMB spec).
+      #
+      # @param write_data [String] Raw bytes to write to the pipe
+      # @return [String] Raw bytes read from the pipe response
+      # @raise [RubySMB::Error::InvalidPacket] If not a valid TransactNmpipeResponse
+      # @raise [RubySMB::Error::UnexpectedStatusCode] If status is not STATUS_SUCCESS or STATUS_BUFFER_OVERFLOW
+      def nmpipe_send_recv(write_data)
+        request = RubySMB::SMB1::Packet::Trans::TransactNmpipeRequest.new
+        @tree.set_header_fields(request)
+        request.set_fid(@fid)
+        request.data_block.trans_data.write_data = write_data
+
+        raw_response = @tree.client.send_recv(request)
+        response = RubySMB::SMB1::Packet::Trans::TransactNmpipeResponse.read(raw_response)
+        unless response.valid?
+          raise RubySMB::Error::InvalidPacket.new(
+            expected_proto: RubySMB::SMB1::SMB_PROTOCOL_ID,
+            expected_cmd:   RubySMB::SMB1::Packet::Trans::TransactNmpipeResponse::COMMAND,
+            packet:         response
+          )
+        end
+        unless [WindowsError::NTStatus::STATUS_SUCCESS,
+                WindowsError::NTStatus::STATUS_BUFFER_OVERFLOW].include?(response.status_code)
+          raise RubySMB::Error::UnexpectedStatusCode, response.status_code
+        end
+        response.data_block.trans_data.read_data.to_binary_s
+      end
+
       # Send a DCERPC request with the provided stub packet.
       #
       # @params stub_packet [#opnum] the stub packet to add to the DCERPC request
